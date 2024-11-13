@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  username        String            @unique
+  email           String            @unique
+  passwordHash    String
+  createdAt       DateTime          @default(now())
+  lastLogin       DateTime?
+  testAttempts    UserTestAttempt[]
+}
+
+model PracticeTest {
+  id              Int               @id @default(autoincrement())
+  testType        String
+  difficultyLevel String
+  createdAt       DateTime          @default(now())
+  questions       Question[]
+  writingTasks    WritingTask[]
+  speakingTasks   SpeakingTask[]
+  userAttempts    UserTestAttempt[]
+}
+
+model Question {
+  id                   Int                    @id @default(autoincrement())
+  practiceTestId       Int
+  questionType         String
+  questionText         String
+  correctAnswer        String
+  sectionNumber        Int
+  createdAt            DateTime               @default(now())
+  practiceTest         PracticeTest           @relation(fields: [practiceTestId], references: [id])
+  multipleChoiceOptions MultipleChoiceOption[]
+  userAnswers          UserAnswer[]
+}
+
+model MultipleChoiceOption {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  optionText String
+  isCorrect  Boolean
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model WritingTask {
+  id              Int               @id @default(autoincrement())
+  practiceTestId  Int
+  taskNumber      Int
+  taskDescription String
+  createdAt       DateTime          @default(now())
+  practiceTest    PracticeTest      @relation(fields: [practiceTestId], references: [id])
+  responses       WritingResponse[]
+}
+
+model SpeakingTask {
+  id              Int               @id @default(autoincrement())
+  practiceTestId  Int
+  partNumber      Int
+  taskDescription String
+  createdAt       DateTime          @default(now())
+  practiceTest    PracticeTest      @relation(fields: [practiceTestId], references: [id])
+  responses       SpeakingResponse[]
+}
+
+model UserTestAttempt {
+  id              Int                @id @default(autoincrement())
+  userId          Int
+  practiceTestId  Int
+  startTime       DateTime           @default(now())
+  endTime         DateTime?
+  overallScore    Float?
+  user            User               @relation(fields: [userId], references: [id])
+  practiceTest    PracticeTest       @relation(fields: [practiceTestId], references: [id])
+  userAnswers     UserAnswer[]
+  writingResponses WritingResponse[]
+  speakingResponses SpeakingResponse[]
+}
+
+model UserAnswer {
+  id                 Int             @id @default(autoincrement())
+  userTestAttemptId  Int
+  questionId         Int
+  userAnswer         String
+  isCorrect          Boolean
+  userTestAttempt    UserTestAttempt @relation(fields: [userTestAttemptId], references: [id])
+  question           Question        @relation(fields: [questionId], references: [id])
+}
+
+model WritingResponse {
+  id                 Int             @id @default(autoincrement())
+  userTestAttemptId  Int
+  writingTaskId      Int
+  responseText       String
+  wordCount          Int
+  score              Float?
+  userTestAttempt    UserTestAttempt @relation(fields: [userTestAttemptId], references: [id])
+  writingTask        WritingTask     @relation(fields: [writingTaskId], references: [id])
+}
+
+model SpeakingResponse {
+  id                 Int             @id @default(autoincrement())
+  userTestAttemptId  Int
+  speakingTaskId     Int
+  audioFilePath      String
+  durationSeconds    Int
+  fluencyScore       Float?
+  coherenceScore     Float?
+  lexicalScore       Float?
+  grammaticalScore   Float?
+  pronunciationScore Float?
+  overallScore       Float?
+  userTestAttempt    UserTestAttempt @relation(fields: [userTestAttemptId], references: [id])
+  speakingTask       SpeakingTask    @relation(fields: [speakingTaskId], references: [id])
+}
